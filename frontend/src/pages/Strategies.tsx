@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStrategies } from '../hooks/useStrategies';
 import { useRebalancing } from '../hooks/useStrategies';
-import { useWeb3Context } from '../contexts/Web3Context';
+import { usePrivyContext } from '../contexts/PrivyContext';
 import { formatPercentage, formatCurrency } from '../utils';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StrategyCard from '../components/strategy/StrategyCard';
@@ -10,7 +10,7 @@ import RebalanceHistory from '../components/strategy/RebalanceHistory';
 export default function Strategies() {
   const { strategies, isLoadingData } = useStrategies();
   const { rebalanceHistory, isLoadingData: isLoadingHistory } = useRebalancing();
-  const { isConnected } = useWeb3Context();
+  const { isConnected } = usePrivyContext();
 
   if (isLoadingData) {
     return (

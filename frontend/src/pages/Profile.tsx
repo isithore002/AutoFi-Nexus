@@ -1,5 +1,5 @@
-import React from 'react';
-import { useWeb3Context } from '../contexts/Web3Context';
+import React, { useState, useEffect } from 'react';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatAddress, formatCurrency } from '../utils';
 import { 
@@ -12,12 +12,72 @@ import {
   SparklesIcon,
   CheckCircleIcon,
   SunIcon,
-  MoonIcon
+  MoonIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 export default function Profile() {
-  const { walletInfo, isConnected, disconnectWallet } = useWeb3Context();
+  const { ready, authenticated, user } = usePrivy();
+  const { wallets } = useWallets();
   const { theme, toggleTheme } = useTheme();
+  
+  const [ethBalance, setEthBalance] = useState<string>('0.00');
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  
+  const wallet = wallets[0]; // Get the first connected wallet
+  const isConnected = ready && authenticated && !!wallet;
+
+  // Function to fetch ETH balance using Web3 provider
+  const fetchEthBalance = async () => {
+    if (!wallet || !wallet.address) {
+      setEthBalance('0.00');
+      return;
+    }
+
+    setIsLoadingBalance(true);
+    setBalanceError(null);
+
+    try {
+      // Get the wallet's provider
+      const provider = await wallet.getEthersProvider();
+      
+      // Fetch balance in wei
+      const balanceWei = await provider.getBalance(wallet.address);
+      
+      // Convert wei to ETH (1 ETH = 10^18 wei)
+      const balanceEth = parseFloat(balanceWei.toString()) / Math.pow(10, 18);
+      
+      // Format to 4 decimal places
+      setEthBalance(balanceEth.toFixed(4));
+      setLastUpdated(new Date());
+      
+      console.log('✅ ETH balance fetched:', balanceEth.toFixed(4), 'ETH');
+    } catch (error) {
+      console.error('❌ Error fetching ETH balance:', error);
+      setBalanceError('Failed to fetch balance');
+      setEthBalance('0.00');
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  // Fetch balance when wallet connects or changes
+  useEffect(() => {
+    if (isConnected && wallet) {
+      fetchEthBalance();
+      
+      // Set up periodic balance refresh (every 30 seconds)
+      const interval = setInterval(fetchEthBalance, 30000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setEthBalance('0.00');
+      setBalanceError(null);
+      setLastUpdated(null);
+    }
+  }, [isConnected, wallet?.address]);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -56,7 +116,7 @@ export default function Profile() {
           </h2>
         </div>
         
-        {isConnected && walletInfo ? (
+        {isConnected && wallet ? (
           <div className="space-y-6">
             {/* Connection Status */}
             <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-700 rounded-2xl p-8">
@@ -70,7 +130,7 @@ export default function Profile() {
                       Wallet Connected
                     </div>
                     <div className="text-base text-green-600 dark:text-green-400 font-mono mt-1">
-                      {formatAddress(walletInfo.address, 12)}
+                      {formatAddress(wallet.address, 12)}
                     </div>
                   </div>
                 </div>
@@ -86,15 +146,39 @@ export default function Profile() {
             {/* Wallet Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-2xl p-8 hover:shadow-xl transition-shadow duration-300">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-blue-500 rounded-2xl shadow-lg">
-                    <ChartBarIcon className="icon-xl text-white" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500 rounded-2xl shadow-lg">
+                      <ChartBarIcon className="icon-xl text-white" />
+                    </div>
+                    <span className="text-base font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">ETH Balance</span>
                   </div>
-                  <span className="text-base font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">ETH Balance</span>
+                  <button
+                    onClick={fetchEthBalance}
+                    disabled={isLoadingBalance}
+                    className="p-2 bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                    title="Refresh balance"
+                  >
+                    <ArrowPathIcon className={`h-4 w-4 text-blue-600 dark:text-blue-400 ${isLoadingBalance ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
                 <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                  {formatCurrency(walletInfo.balance)}
+                  {isLoadingBalance ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span>Loading...</span>
+                    </div>
+                  ) : balanceError ? (
+                    <span className="text-red-500 text-lg">{balanceError}</span>
+                  ) : (
+                    `${ethBalance} ETH`
+                  )}
                 </div>
+                {lastUpdated && !isLoadingBalance && !balanceError && (
+                  <div className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </div>
+                )}
               </div>
               
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-700 rounded-2xl p-8 hover:shadow-xl transition-shadow duration-300">
@@ -109,13 +193,6 @@ export default function Profile() {
                 </div>
               </div>
             </div>
-            
-            <button
-              onClick={disconnectWallet}
-              className="w-full bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:shadow-lg"
-            >
-              Disconnect Wallet
-            </button>
           </div>
         ) : (
           <div className="text-center py-12">

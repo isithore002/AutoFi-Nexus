@@ -52,7 +52,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                   Try Again
                 </button>
               </div>
-              {import.meta.env.DEV && this.state.error && (
+              {import.meta.env.VITE_NODE_ENV !== 'production' && this.state.error && (
                 <details className="mt-6 text-left">
                   <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400">
                     Error Details (Development)

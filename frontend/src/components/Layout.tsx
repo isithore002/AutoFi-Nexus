@@ -15,7 +15,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useWeb3Context } from '../contexts/Web3Context';
+import { usePrivyContext } from '../contexts/PrivyContext';
 import { NAV_ITEMS } from '../utils/constants';
 import { formatAddress } from '../utils';
 import WalletConnectButton from './WalletConnectButton';
@@ -27,7 +27,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { walletInfo, isConnected } = useWeb3Context();
+  const { wallet, isConnected } = usePrivyContext();
   const location = useLocation();
 
   // Icon mapping for navigation items
@@ -126,10 +126,10 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* Wallet connection */}
               <div className="flex items-center gap-x-3">
-                {isConnected && walletInfo ? (
+                {isConnected && wallet ? (
                   <div className="flex items-center gap-x-3 px-4 py-2 glass-effect rounded-xl border border-accent-500/30">
                     <div className="text-sm text-gray-300 font-medium">
-                      {formatAddress(walletInfo.address, 6)}
+                      {formatAddress(wallet.address, 6)}
                     </div>
                     <div className="h-2 w-2 rounded-full bg-accent-400 animate-pulse shadow-glow"></div>
                   </div>
@@ -240,7 +240,7 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
 
           <div className="p-6 border-t border-purple-500/30">
-            {isConnected && walletInfo ? (
+            {isConnected && wallet ? (
               <div className="glass-effect rounded-2xl p-4 border border-accent-500/30">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-3 h-3 bg-accent-400 rounded-full animate-pulse shadow-glow"></div>
@@ -249,7 +249,7 @@ export default function Layout({ children }: LayoutProps) {
                   </span>
                 </div>
                 <p className="text-xs text-gray-300 font-mono bg-black/20 rounded-lg px-3 py-2">
-                  {formatAddress(walletInfo.address, 8)}
+                  {formatAddress(wallet.address, 8)}
                 </p>
               </div>
             ) : (

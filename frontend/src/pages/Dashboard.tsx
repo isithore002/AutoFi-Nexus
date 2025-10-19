@@ -15,9 +15,11 @@ import {
   ArrowUpRight,
   Layers,
   BarChart3,
-  Shield
+  Shield,
+  LogOut
 } from 'lucide-react';
 import WalletConnectButton from '../components/WalletConnectButton';
+import { usePrivyContext } from '../contexts/PrivyContext';
 
 // Animated Counter Component
 const AnimatedCounter = ({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) => {
@@ -112,6 +114,7 @@ const StatusBadge = ({ status }: { status: 'running' | 'idle' | 'executed' }) =>
 
 // Main Dashboard Component
 const Dashboard = () => {
+  const { isConnected, disconnectWallet } = usePrivyContext();
   
   // Mock data
   const portfolioData = {
@@ -241,7 +244,20 @@ const Dashboard = () => {
               <Zap className="text-yellow-400" size={24} />
               Active Strategies
             </h3>
-            <GradientButton variant="outline" onClick={() => {}}>View All</GradientButton>
+            <div className="flex items-center gap-3">
+              {isConnected && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={disconnectWallet}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 hover:text-red-200 rounded-xl transition-all duration-300 font-medium"
+                >
+                  <LogOut size={16} />
+                  Disconnect Wallet
+                </motion.button>
+              )}
+              <GradientButton variant="outline" onClick={() => {}}>View All</GradientButton>
+            </div>
                   </div>
           <div className="space-y-4">
             {strategies.map((strategy, idx) => (

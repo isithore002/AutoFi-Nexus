@@ -12,6 +12,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Polyfill for Buffer to fix Privy compatibility
+      if (typeof global === 'undefined') {
+        window.global = globalThis;
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
